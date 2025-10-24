@@ -1,9 +1,9 @@
-from google import genai
+import streamlit as st
 
-# The client gets the API key from the environment variable `GEMINI_API_KEY`.
-client = genai.Client()
+data_generation = st.Page("data_generation.py", title = "Data Generation")
+talk_to_your_data = st.Page("talk_to_your_data.py", title = "Talk to your data")
 
-response = client.models.generate_content(
-    model="gemini-2.5-flash", contents="Explain how AI works in a few words"
-)
-print(response.text)
+pg = st.navigation([data_generation, talk_to_your_data])
+
+pg.run()
+
