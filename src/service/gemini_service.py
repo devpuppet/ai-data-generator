@@ -1,32 +1,31 @@
 from google import genai
 from google.genai.types import GenerateContentConfig
-from src.db.db_service import DatabaseService
 import logging
 
-db_service = DatabaseService()
-
-def select(sql: str):
-    return db_service.select(sql)
-
-
-def insert(sql: str):
-    db_service.insert(sql)
+from db.db_service import DatabaseService
 
 
 class GeminiAIService:
-    def __init__(self):
+    def __init__(self, database_service: DatabaseService):
+        self._database_service = database_service
         # The client gets the API key from the environment variable `GEMINI_API_KEY`.
-        self.__client = genai.Client()
-        self.__config = GenerateContentConfig(
+        self._client = genai.Client()
+        self._config = GenerateContentConfig(
             system_instruction="You are a helpful assistant that generate SQL statements",
-            tools=[select, insert]
+            tools=[self.select, self.insert]
         )
+
+    def select(self, sql: str):
+        return self._database_service.select(sql)
+
+    def insert(self, sql: str):
+        self._database_service.insert(sql)
 
     def generate_response(self, prompt):
         logging.info("Prompt: " + prompt)
-        response = self.__client.models.generate_content(
+        response = self._client.models.generate_content(
             model="gemini-2.5-flash",
-            config=self.__config,
+            config=self._config,
             contents=prompt)
         logging.info("Response: " + response.text)
         return response
