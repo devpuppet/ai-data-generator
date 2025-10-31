@@ -1,6 +1,6 @@
 -- Create the 'Companies' table
 CREATE TABLE Companies (
-    company_id INT PRIMARY KEY AUTO_INCREMENT,
+    company_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     name VARCHAR(255) NOT NULL,
     address VARCHAR(255) NOT NULL,
     city VARCHAR(100) NOT NULL,
@@ -13,7 +13,7 @@ CREATE TABLE Companies (
 
 -- Create the 'Departments' table
 CREATE TABLE Departments (
-    department_id INT PRIMARY KEY AUTO_INCREMENT,
+    department_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     company_id INT NOT NULL,
     name VARCHAR(100) NOT NULL,
     location VARCHAR(255),
@@ -21,9 +21,12 @@ CREATE TABLE Departments (
     FOREIGN KEY (company_id) REFERENCES Companies(company_id)
 );
 
+-- Create 'Employment Status' type
+CREATE TYPE Employment_status_enum AS ENUM ('Full-time', 'Part-time', 'Contract', 'Temporary');
+
 -- Create the 'Employees' table
 CREATE TABLE Employees (
-    employee_id INT PRIMARY KEY AUTO_INCREMENT,
+    employee_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
     middle_name VARCHAR(100),
@@ -33,26 +36,29 @@ CREATE TABLE Employees (
     job_title VARCHAR(100) NOT NULL,
     department_id INT NOT NULL,
     salary DECIMAL(10, 2) NOT NULL,
-    employment_status ENUM('Full-time', 'Part-time', 'Contract', 'Temporary') NOT NULL,
+    employment_status Employment_status_enum NOT NULL,
     FOREIGN KEY (department_id) REFERENCES Departments(department_id)
 );
 
+-- Create 'Project Status' type
+CREATE TYPE Project_status AS ENUM ('Planning', 'In Progress', 'Completed', 'On Hold', 'Cancelled');
+
 -- Create the 'Projects' table
 CREATE TABLE Projects (
-    project_id INT PRIMARY KEY AUTO_INCREMENT,
+    project_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     name VARCHAR(255) NOT NULL,
     description TEXT,
     start_date DATE NOT NULL,
     end_date DATE,
     company_id INT NOT NULL,
-    project_status ENUM('Planning', 'In Progress', 'Completed', 'On Hold', 'Cancelled') NOT NULL,
+    project_status Project_status NOT NULL,
     budget DECIMAL(12, 2),
     FOREIGN KEY (company_id) REFERENCES Companies(company_id)
 );
 
 -- Create the 'Employee_Projects' table (Junction table for Employees and Projects)
 CREATE TABLE Employee_Projects (
-    employee_project_id INT PRIMARY KEY AUTO_INCREMENT,
+    employee_project_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     employee_id INT NOT NULL,
     project_id INT NOT NULL,
     role VARCHAR(100),
@@ -65,7 +71,7 @@ CREATE TABLE Employee_Projects (
 
 -- Create the 'Employee_Benefits' table
 CREATE TABLE Employee_Benefits (
-    benefit_id INT PRIMARY KEY AUTO_INCREMENT,
+    benefit_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     employee_id INT NOT NULL,
     benefit_type VARCHAR(100) NOT NULL,
     enrollment_date DATE NOT NULL,
@@ -73,16 +79,19 @@ CREATE TABLE Employee_Benefits (
     FOREIGN KEY (employee_id) REFERENCES Employees(employee_id)
 );
 
+-- Create 'Review Status' type
+CREATE TYPE review_status AS ENUM ('Draft', 'Final', 'Approved');
+
 -- Create the 'Performance_Reviews' table
 CREATE TABLE Performance_Reviews (
-    review_id INT PRIMARY KEY AUTO_INCREMENT,
+    review_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     employee_id INT NOT NULL,
     reviewer_id INT NOT NULL,  -- Self-referencing foreign key
     review_date DATE NOT NULL,
     rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
     comments TEXT,
     goals_set TEXT,
-    review_status ENUM('Draft', 'Final', 'Approved') DEFAULT 'Draft',
+    review_status review_status DEFAULT 'Draft',
     FOREIGN KEY (employee_id) REFERENCES Employees(employee_id),
     FOREIGN KEY (reviewer_id) REFERENCES Employees(employee_id)
 );
