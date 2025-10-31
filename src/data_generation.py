@@ -22,7 +22,7 @@ with prompt_container:
             st.warning("Please select a DDL file")
             return
         schema = StringIO(upload_ddl_schema_file.getvalue().decode("utf-8")).read()
-        result = database_service.execute_script(schema)
+        result = database_service.create_schema_from_ddl(schema)
         response = gemini_ai_service.generate_response(prompt + "\n`" + schema + "`")
 
     generate_button = st.button("Generate", on_click=generate)
