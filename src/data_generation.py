@@ -5,7 +5,7 @@ from io import StringIO
 
 prompt_container = st.container(border=True)
 database_service = container.database_service()
-gemini_ai_service = container.gemini_service()
+ai_service = container.ai_service()
 
 
 with prompt_container:
@@ -22,8 +22,8 @@ with prompt_container:
             st.warning("Please select a DDL file")
             return
         schema = StringIO(upload_ddl_schema_file.getvalue().decode("utf-8")).read()
-        result = database_service.create_schema_from_ddl(schema)
-        response = gemini_ai_service.generate_response(prompt + "\n`" + schema + "`")
+        database_service.create_schema_from_ddl(schema)
+        response = ai_service.generate_response(prompt + "\n`" + schema + "`")
 
     generate_button = st.button("Generate", on_click=generate)
 

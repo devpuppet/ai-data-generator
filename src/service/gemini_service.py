@@ -1,11 +1,12 @@
 from google import genai
 from google.genai.types import GenerateContentConfig
+from src.service.ai_service import AIService
 import logging
 
 from db.db_service import DatabaseService
 
 
-class GeminiAIService:
+class GeminiAIService(AIService):
     def __init__(self, database_service: DatabaseService):
         self._database_service = database_service
         # The client gets the API key from the environment variable `GEMINI_API_KEY`.

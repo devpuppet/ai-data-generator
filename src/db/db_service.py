@@ -25,7 +25,7 @@ class DatabaseService:
             return result.fetchall()
 
     def execute_statement(self, query: str, params=None):
-        with self.engine.connect() as conn:
+        with self.engine.begin() as conn:
             conn.execute(text(query), params or {})
 
     def create_schema_from_ddl(self, sql_script: str):
