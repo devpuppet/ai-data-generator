@@ -22,7 +22,7 @@ class DatabaseService:
     def select(self, query: str, params=None):
         with self.engine.connect() as conn:
             result = conn.execute(text(query), params or {})
-            return result.fetchall()
+            return [dict(row._mapping) for row in result.fetchall()]
 
     def execute_statement(self, query: str, params=None):
         with self.engine.begin() as conn:
