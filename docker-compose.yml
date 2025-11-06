@@ -13,5 +13,18 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  app:
+      build: .
+      container_name: ai_data_generator
+      depends_on:
+        - db
+      ports:
+        - "8501:8501"
+      env_file:
+        - .env
+      volumes:
+        - .:/app
+      restart: always
+
 volumes:
   postgres_data:
