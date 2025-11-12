@@ -1,10 +1,12 @@
 from google import genai
 from google.genai.types import GenerateContentConfig
+from google.genai.errors import APIError, ServerError
 from src.service.ai_service import AIService
 from .generate_options import GenerateOptions
 import logging
 
 from db.db_service import DatabaseService
+from .model_response import ModelResponse
 
 
 class GeminiAIService(AIService):
@@ -29,12 +31,25 @@ class GeminiAIService(AIService):
             max_output_tokens=options.max_tokens
         )
 
-        response = self._client.models.generate_content(
-            model="gemini-2.5-flash",
-            config=config,
-            contents=prompt)
-        logging.info("Response: " + self.getResponseText(response))
-        return response
+        try:
+            response = self._client.models.generate_content(
+                model="gemini-2.5-flash",
+                config=config,
+                contents=prompt)
+            logging.info("Response: " + self.getResponseText(response))
+            return ModelResponse(text=self.getResponseText(response))
+
+        except ServerError as e:
+            logging.error(f"Server error: {e}")
+            return ModelResponse(error=f"Server error: {e}")
+
+        except APIError as e:
+            logging.error(f"API error: {e}")
+            return ModelResponse(error=f"API error: {e}")
+
+        except Exception as e:
+            logging.exception("Unexpected error during generation")
+            return ModelResponse(error=f"Unexpected error: {e}")
 
     def getResponseText(self, response):
         if response.text:
