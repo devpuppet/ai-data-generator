@@ -76,3 +76,14 @@ class DatabaseService:
             sql_create_statement = sql_create_statement.replace("CREATE TABLE", "CREATE TABLE IF NOT EXISTS")
         self.execute_statement(sql_create_statement)
         logging.info(f"Executed: {sql_create_statement.splitlines()[0][:60]}...")
+
+    def get_table_names(self):
+        query = """
+                SELECT table_name
+                FROM information_schema.tables
+                WHERE table_schema = 'public'
+                  AND table_type = 'BASE TABLE'
+                ORDER BY table_name; \
+                """
+        rows = self.select(query)
+        return [r["table_name"] for r in rows]

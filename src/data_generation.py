@@ -2,6 +2,7 @@ import streamlit as st
 from src.container import container
 from src.service.generate_options import GenerateOptions
 from io import StringIO
+import pandas as pd
 
 prompt_container = st.container(border=True)
 database_service = container.database_service()
@@ -28,3 +29,17 @@ with prompt_container:
 
 
     generate_button = st.button("Generate", on_click=generate)
+
+data_preview_container = st.container(border=True)
+
+with data_preview_container:
+    tables = database_service.get_table_names()
+    if not tables:
+        st.info("No tables found in the database. Upload a DDL schema first.")
+    else:
+        table_name = st.selectbox("Select table", tables)
+        rows = database_service.select(f"SELECT * FROM {table_name} LIMIT 10;")
+        if rows:
+            st.table(pd.DataFrame(rows))
+        else:
+            st.info(f"No rows found in {table_name} table")
