@@ -1,5 +1,6 @@
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import SQLAlchemyError
 from dotenv import load_dotenv
 import os
 import logging
@@ -25,8 +26,14 @@ class DatabaseService:
             return [dict(row._mapping) for row in result.fetchall()]
 
     def execute_statement(self, query: str, params=None):
-        with self.engine.begin() as conn:
-            conn.execute(text(query), params or {})
+        try:
+            with self.engine.begin() as conn:
+                conn.execute(text(query), params or {})
+        except SQLAlchemyError as e:
+            orig = getattr(e, "orig", None)
+            message = str(orig) if orig else str(e)
+            logging.error(message)
+            raise e
 
     def create_schema_from_ddl(self, sql_script: str):
         statements = self.split_script_to_statements(sql_script)
