@@ -52,11 +52,22 @@ class GeminiAIService(AIService):
             return ModelResponse(error=f"Unexpected error: {e}")
 
     def getResponseText(self, response):
-        if response.text:
-            output_text = response.text
-        elif response.candidates and response.candidates[0].content.parts:
-            output_text = response.candidates[0].content.parts[0].text
-        else:
-            output_text = "<no text in response>"
+        try:
+            if getattr(response, "text", None):
+                return response.text
 
-        return output_text
+            candidates = getattr(response, "candidates", None)
+            if candidates and len(candidates) > 0:
+                candidate = candidates[0]
+                content = getattr(candidate, "content", None)
+
+                if content and getattr(content, "parts", None):
+                    first_part = content.parts[0]
+                    return getattr(first_part, "text", "<no text in part>")
+
+            logging.warning(f"No text content found in Gemini response: {response}")
+            return "<no text in response>"
+
+        except Exception as e:
+            logging.error(f"Error parsing response: {e}")
+            return f"<error extracting text: {e}>"
