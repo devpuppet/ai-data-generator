@@ -20,6 +20,9 @@ class DatabaseService:
     def insert(self, query: str, params=None):
         self.execute_statement(query, params)
 
+    def update(self, query: str, params=None):
+        self.execute_statement(query, params)
+
     def select(self, query: str, params=None):
         with self.engine.connect() as conn:
             result = conn.execute(text(query), params or {})

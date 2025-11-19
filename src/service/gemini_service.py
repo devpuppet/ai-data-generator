@@ -16,17 +16,42 @@ class GeminiAIService(AIService):
         self._client = genai.Client()
 
     def select(self, sql: str):
+        """Executes SQL SELECT query to read the data from the database
+
+        Args:
+            sql (str): SQL SELECT query
+        Returns:
+            List[Dict]: returns list of dictionaries
+        """
         return self._database_service.select(sql)
 
     def insert(self, sql: str):
+        """Executes SQL INSERT query to add new data to the database
+
+        Args:
+            sql (str): SQL INSERT query
+        Returns:
+            None: returns nothing
+        """
         self._database_service.insert(sql)
+
+    def update(self, sql: str):
+        """Executes SQL UPDATE query to modify data in the database
+
+        Args:
+            sql (str): SQL UPDATE query
+        Returns:
+            None: returns nothing
+        """
+        self._database_service.update(sql)
 
     def generate_response(self, prompt: str, options: GenerateOptions):
         logging.info("Prompt: " + prompt)
 
+        tools = [self.select, self.insert, self.update]
         config = GenerateContentConfig(
             system_instruction="You are a helpful assistant that generate SQL statements",
-            tools=[self.select, self.insert],
+            tools=tools,
             temperature=options.temperature,
             max_output_tokens=options.max_tokens
         )

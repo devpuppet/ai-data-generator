@@ -12,7 +12,7 @@ with prompt_container:
     prompt = st.text_input("Prompt", placeholder="Enter your prompt here")
     upload_ddl_schema_file = st.file_uploader("Upload DDL Schema")
     temperature = st.slider('Temperature', min_value=0.0, max_value=2.0)
-    max_tokens = st.text_input("Max tokens", value="100", max_chars=4)
+    max_tokens = st.text_input("Max tokens", value="1000", max_chars=4)
 
     def generate():
         if not prompt:
