@@ -97,3 +97,51 @@ class DatabaseService:
                 """
         rows = self.select(query)
         return [r["table_name"] for r in rows]
+
+    def get_table_schema(self, table_name: str):
+        columns = self.get_table_columns(table_name)
+        foreign_keys = self.get_table_foreign_keys(table_name)
+        schema = {
+            "columns": columns,
+            "foreign_keys": [
+                {
+                    "column": fk["column_name"],
+                    "references_table": fk["foreign_table_name"],
+                    "references_column": fk["foreign_column_name"],
+                }
+                for fk in foreign_keys
+            ]
+        }
+
+        return schema
+
+    def get_table_columns(self, table_name: str):
+        return self.select(f"""
+                    SELECT column_name,
+                    data_type,
+                    is_nullable,
+                    is_identity,
+                    identity_generation
+                    FROM information_schema.columns
+                    WHERE table_schema = 'public'
+                      AND table_name = '{table_name}'
+                """)
+
+    def get_table_foreign_keys(self, table_name: str):
+        return self.select(f"""
+                        SELECT
+                            kcu.column_name AS column_name,
+                            ccu.table_name AS foreign_table_name,
+                            ccu.column_name AS foreign_column_name
+                        FROM 
+                            information_schema.table_constraints AS tc
+                        JOIN information_schema.key_column_usage AS kcu
+                            ON tc.constraint_name = kcu.constraint_name
+                        JOIN information_schema.constraint_column_usage AS ccu
+                            ON ccu.constraint_name = tc.constraint_name
+                        WHERE 
+                            tc.constraint_type = 'FOREIGN KEY'
+                            AND tc.table_schema = 'public'
+                            AND tc.table_name = '{table_name}';
+                    """)
+

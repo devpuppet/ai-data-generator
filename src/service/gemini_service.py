@@ -45,14 +45,35 @@ class GeminiAIService(AIService):
         """
         self._database_service.update(sql)
 
+    def get_tables(self):
+        """Executes SQL SELECT query to get all table names in the database
+
+        Args:
+            None
+        Returns:
+            None: returns list of table names
+        """
+        return self._database_service.get_table_names()
+
+    def get_table_schema(self, table_name: str):
+        """Executes SQL query to get the full database schema
+
+        Args:
+            table_name (str): table name
+        Returns:
+            None: object containing schema for the given table
+        """
+        return self._database_service.get_table_schema(table_name)
+
     def generate_response(self, prompt: str, options: GenerateOptions):
         logging.info("Prompt: " + prompt)
 
-        tools = [self.select, self.insert, self.update]
+        tools = [self.select, self.insert, self.update, self.get_tables, self.get_table_schema]
         config = GenerateContentConfig(
             system_instruction="You are a helpful assistant that generate SQL statements. When generating SQL statements, follow below instructions:\n"
-                               "1. When inserting/updating data, values for columns marked as NOT NULL can't be null\n"
-                               "2. Use SELECT queries on other tables to get values for foreign keys",
+                               "1. Use SELECT queries on other tables to get values for foreign keys\n"
+                               "2. To get all available tables, use get_tables tool\n"
+                               "3. If you need to know table schema, use get_table_schema tool",
             tools=tools,
             temperature=options.temperature,
             max_output_tokens=options.max_tokens
