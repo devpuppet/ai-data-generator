@@ -23,12 +23,14 @@ with prompt_container:
             return
         schema = StringIO(upload_ddl_schema_file.getvalue().decode("utf-8")).read()
         database_service.create_schema_from_ddl(schema)
-        model_response = ai_service.generate_response(prompt + "\n`" + schema + "`\nColumns marked as NOT NULL can't be null",
+        model_response = ai_service.generate_response(prompt + "\n`" + schema,
                                                 GenerateOptions(temperature=temperature,
                                                                 max_tokens=max_tokens))
         if not model_response.text:
             st.warning(f"An error occured:\n {model_response.error}")
             return
+        else:
+            st.success(model_response.text)
 
 
     generate_button = st.button("Generate", on_click=generate)

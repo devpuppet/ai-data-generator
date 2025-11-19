@@ -50,7 +50,9 @@ class GeminiAIService(AIService):
 
         tools = [self.select, self.insert, self.update]
         config = GenerateContentConfig(
-            system_instruction="You are a helpful assistant that generate SQL statements",
+            system_instruction="You are a helpful assistant that generate SQL statements. When generating SQL statements, follow below instructions:\n"
+                               "1. When inserting/updating data, values for columns marked as NOT NULL can't be null\n"
+                               "2. Use SELECT queries on other tables to get values for foreign keys",
             tools=tools,
             temperature=options.temperature,
             max_output_tokens=options.max_tokens
