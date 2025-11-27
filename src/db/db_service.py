@@ -1,19 +1,12 @@
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
-from dotenv import load_dotenv
-import os
 import logging
 import re
 
 
 class DatabaseService:
-    def __init__(self):
-        load_dotenv()
-        DB_URL = (
-            f"postgresql+psycopg2://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}"
-            f"@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
-        )
+    def __init__(self, DB_URL: str):
         self.engine = create_engine(DB_URL)
         self.Session = sessionmaker(bind=self.engine)
 

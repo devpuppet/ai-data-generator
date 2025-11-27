@@ -1,6 +1,8 @@
 from google import genai
 from google.genai.types import GenerateContentConfig
 from google.genai.errors import APIError, ServerError
+
+from guards.input.valid_sql_guard import ValidSqlGuard
 from src.service.ai_service import AIService
 from .generate_options import GenerateOptions
 import logging
@@ -10,8 +12,11 @@ from .model_response import ModelResponse
 
 
 class GeminiAIService(AIService):
-    def __init__(self, database_service: DatabaseService):
+    def __init__(self,
+                 database_service: DatabaseService,
+                 valid_sql_guard: ValidSqlGuard):
         self._database_service = database_service
+        self.__valid_sql_guard = valid_sql_guard
         # The client gets the API key from the environment variable `GEMINI_API_KEY`.
         self._client = genai.Client()
 
@@ -23,6 +28,7 @@ class GeminiAIService(AIService):
         Returns:
             List[Dict]: returns list of dictionaries
         """
+        self.__valid_sql_guard.validate_sql(sql)
         return self._database_service.select(sql)
 
     def insert(self, sql: str):
@@ -33,6 +39,7 @@ class GeminiAIService(AIService):
         Returns:
             None: returns nothing
         """
+        self.__valid_sql_guard.validate_sql(sql)
         self._database_service.insert(sql)
 
     def update(self, sql: str):
@@ -43,6 +50,7 @@ class GeminiAIService(AIService):
         Returns:
             None: returns nothing
         """
+        self.__valid_sql_guard.validate_sql(sql)
         self._database_service.update(sql)
 
     def get_tables(self):
@@ -73,7 +81,7 @@ class GeminiAIService(AIService):
             system_instruction="You are a helpful assistant that generate SQL statements. When generating SQL statements, follow below instructions:\n"
                                "1. Use SELECT queries on other tables to get values for foreign keys\n"
                                "2. To get all available tables, use get_tables tool\n"
-                               "3. If you need to know table schema, use get_table_schema tool",
+                               "3. If you need to know table schema, use get_table_schema tool. Table names are case-sensitive",
             tools=tools,
             temperature=options.temperature,
             max_output_tokens=options.max_tokens
