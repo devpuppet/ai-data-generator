@@ -4,9 +4,9 @@ import logging
 
 
 class ValidSqlGuard:
-    def __init__(self, DB_URL: str):
+    def __init__(self):
         self.__guard = Guard().use(
-            ValidSQL(conn=DB_URL), on_fail="fix_reask"
+            ValidSQL(on_fail="reask")
         )
 
     def validate_sql(self, sql: str):

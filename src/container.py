@@ -9,12 +9,12 @@ import os
 class Container:
     def __init__(self):
         load_dotenv()
-        DB_URL = (
+        db_url = (
             f"postgresql+psycopg2://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}"
             f"@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
         )
-        self._database_service = DatabaseService(DB_URL)
-        self.__valid_sql_guard = ValidSqlGuard(DB_URL)
+        self._database_service = DatabaseService(db_url)
+        self.__valid_sql_guard = ValidSqlGuard()
 
     def database_service(self) -> DatabaseService:
         return self._database_service
