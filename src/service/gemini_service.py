@@ -49,18 +49,20 @@ class GeminiAIService(AIService):
             None: returns nothing
         """
         for sql in sqls:
+            self.__valid_sql_guard.validate_sql(sql)
             self._database_service.insert(sql)
 
-    def update(self, sql: str):
-        """Executes SQL UPDATE query to modify data in the database
+    def update(self, sqls: List[str]):
+        """Executes multiple SQL UPDATE queries to modify data in the database
 
         Args:
-            sql (str): SQL UPDATE query
+            sqls (List[str]): list of SQL UPDATE queries
         Returns:
             None: returns nothing
         """
-        self.__valid_sql_guard.validate_sql(sql)
-        self._database_service.update(sql)
+        for sql in sqls:
+            self.__valid_sql_guard.validate_sql(sql)
+            self._database_service.update(sql)
 
     def get_tables(self):
         """Executes SQL SELECT query to get all table names in the database
