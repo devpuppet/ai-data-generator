@@ -62,5 +62,7 @@ with data_preview_container:
         if not model_response.text:
             st.warning(f"An error occured:\n {model_response.error}")
             return
+        else:
+            st.success(model_response.text)
 
     edit_button = st.button("Submit", on_click=edit)

@@ -1,20 +1,15 @@
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
-from dotenv import load_dotenv
-import os
 import logging
 import re
 
 
 class DatabaseService:
-    def __init__(self):
-        load_dotenv()
-        DB_URL = (
-            f"postgresql+psycopg2://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}"
-            f"@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
-        )
-        self.engine = create_engine(DB_URL)
+    def __init__(self, db_url: str):
+        self.engine = create_engine(db_url,
+                                    isolation_level="AUTOCOMMIT",
+                                    pool_pre_ping=True)
         self.Session = sessionmaker(bind=self.engine)
 
     def insert(self, query: str, params=None):
@@ -30,7 +25,7 @@ class DatabaseService:
 
     def execute_statement(self, query: str, params=None):
         try:
-            with self.engine.begin() as conn:
+            with self.engine.connect() as conn:
                 conn.execute(text(query), params or {})
         except SQLAlchemyError as e:
             orig = getattr(e, "orig", None)
@@ -101,6 +96,12 @@ class DatabaseService:
     def get_table_schema(self, table_name: str):
         columns = self.get_table_columns(table_name)
         foreign_keys = self.get_table_foreign_keys(table_name)
+
+        for col in columns:
+            if col["data_type"] == "USER-DEFINED":
+                enum_name = col["udt_name"]
+                col["enum_values"] = self.get_enum_values(enum_name)
+
         schema = {
             "columns": columns,
             "foreign_keys": [
@@ -121,7 +122,8 @@ class DatabaseService:
                     data_type,
                     is_nullable,
                     is_identity,
-                    identity_generation
+                    identity_generation,
+                    udt_name
                     FROM information_schema.columns
                     WHERE table_schema = 'public'
                       AND table_name = '{table_name}'
@@ -144,4 +146,14 @@ class DatabaseService:
                             AND tc.table_schema = 'public'
                             AND tc.table_name = '{table_name}';
                     """)
+
+    def get_enum_values(self, enum_name: str):
+        rows = self.select(f"""
+            SELECT e.enumlabel AS value
+            FROM pg_type t
+            JOIN pg_enum e ON t.oid = e.enumtypid
+            JOIN pg_namespace n ON n.oid = t.typnamespace
+            WHERE t.typname = '{enum_name}';
+        """)
+        return [row["value"] for row in rows]
 
