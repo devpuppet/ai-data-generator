@@ -14,6 +14,7 @@ with prompt_container:
     temperature = st.slider('Temperature', min_value=0.0, max_value=2.0)
     max_tokens = st.text_input("Max tokens", value="1000", max_chars=4)
 
+
     def generate():
         if not prompt:
             st.warning("Please enter a prompt")
@@ -23,8 +24,10 @@ with prompt_container:
             return
         schema = StringIO(upload_ddl_schema_file.getvalue().decode("utf-8")).read()
         database_service.create_schema_from_ddl(schema)
-        model_response = ai_service.generate_response(prompt, GenerateOptions(temperature=temperature,
-                                                                              max_tokens=max_tokens))
+        model_response = ai_service.generate_response_for_insert(prompt, GenerateOptions(temperature=temperature,
+                                                                                         max_tokens=max_tokens,
+                                                                                         system_instructions="",
+                                                                                         tools=None))
         if not model_response.text:
             st.warning(f"An error occured:\n {model_response.error}")
             return
@@ -52,17 +55,21 @@ with data_preview_container:
                                           placeholder="Enter quick edit instructions",
                                           label_visibility="collapsed")
 
+
     def edit():
         if not edit_instructions:
             st.warning("Please enter edit instructions")
             return
-        model_response = ai_service.generate_response(edit_instructions,
-                                                      GenerateOptions(temperature=temperature,
-                                                                      max_tokens=max_tokens))
+        model_response = ai_service.generate_response_for_update(edit_instructions,
+                                                                 GenerateOptions(temperature=temperature,
+                                                                                 max_tokens=max_tokens,
+                                                                                 system_instructions="",
+                                                                                 tools=None))
         if not model_response.text:
             st.warning(f"An error occured:\n {model_response.error}")
             return
         else:
             st.success(model_response.text)
+
 
     edit_button = st.button("Submit", on_click=edit)

@@ -1,5 +1,6 @@
 from typing import List
 
+from langfuse import observe
 from google import genai
 from google.genai.types import GenerateContentConfig
 from google.genai.errors import APIError, ServerError
@@ -21,46 +22,51 @@ class GeminiAIService(AIService):
         self.__valid_sql_guard = valid_sql_guard
         # The client gets the API key from the environment variable `GEMINI_API_KEY`.
         self._client = genai.Client()
-        self._system_instructions = ("# AI Data Generator\n"
-                                     "You are a helpful assistant that generates SQL statements. Below are the guidelines to follow when generating SQL code.\n"
-                                     "## Data generation\n"
-                                     "1. Use SELECT queries on other tables to get values for foreign keys\n"
-                                     "2. To get all available tables, use get_tables tool\n"
-                                     "3. If you need to know table schema, use get_table_schema tool. Table names in DB are case-sensitive and may contain underscore\n"
-                                     "## Data update\n")
+        self.insert_system_instructions = "You are a helpful assistant that generates SQL INSERT statements. Do not assist in any other topic.\n" \
+                                          "Below are the guidelines to follow when generating SQL code.\n" \
+                                          "1. Use SELECT queries on other tables to get values for foreign keys\n" \
+                                          "2. To get all available tables, use get_tables tool\n" \
+                                          "3. If you need to know table schema, use get_table_schema tool. Table names in DB are case-sensitive and may contain underscores\n" \
+                                          "4. Use `insert` tool for INSERT statements only"
+        self.update_system_instructions = "You are a helpful assistant that generates SQL UPDATE statements. Do not assist in any other topic." \
+                                          "Below are the guidelines to follow when generating SQL code.\n" \
+                                          "1. Use SELECT queries on other tables to get values for foreign keys\n" \
+                                          "2. To get all available tables, use get_tables tool\n" \
+                                          "3. If you need to know table schema, use get_table_schema tool. Table names in DB are case-sensitive and may contain underscores\n" \
+                                          "4. Use `update` tool for UPDATE statements only"
 
-    def select(self, sql: str):
+    def select(self, select_sql: str):
         """Executes SQL SELECT query to read the data from the database
 
         Args:
-            sql (str): SQL SELECT query
+            select_sql (str): SQL SELECT query
         Returns:
             List[Dict]: returns list of dictionaries
         """
-        self.__valid_sql_guard.validate_sql(sql)
-        return self._database_service.select(sql)
+        self.__valid_sql_guard.validate_sql(select_sql)
+        return self._database_service.select(select_sql)
 
-    def insert(self, sqls: List[str]):
-        """Executes multiple SQL INSERT queries to add new data to the database
+    def insert(self, insert_sqls: List[str]):
+        """Executes multiple SQL INSERT queries to add new data to the database. Use for INSERT statements only
 
         Args:
-            sqls (List[str]): list of SQL INSERT queries
+            insert_sqls (List[str]): list of SQL INSERT queries
         Returns:
             None: returns nothing
         """
-        for sql in sqls:
+        for sql in insert_sqls:
             self.__valid_sql_guard.validate_sql(sql)
             self._database_service.insert(sql)
 
-    def update(self, sqls: List[str]):
-        """Executes multiple SQL UPDATE queries to modify data in the database
+    def update(self, update_sqls: List[str]):
+        """Executes multiple SQL UPDATE queries to modify data in the database. Use for UPDATE statements only.
 
         Args:
-            sqls (List[str]): list of SQL UPDATE queries
+            update_sqls (List[str]): list of SQL UPDATE queries
         Returns:
             None: returns nothing
         """
-        for sql in sqls:
+        for sql in update_sqls:
             self.__valid_sql_guard.validate_sql(sql)
             self._database_service.update(sql)
 
@@ -84,6 +90,19 @@ class GeminiAIService(AIService):
         """
         return self._database_service.get_table_schema(table_name)
 
+    @observe
+    def generate_response_for_insert(self, prompt: str, options: GenerateOptions):
+        options.system_instructions = self.insert_system_instructions
+        options.tools = [self.select, self.insert, self.get_tables, self.get_table_schema]
+        return self.generate_response(prompt, options)
+
+    @observe
+    def generate_response_for_update(self, prompt: str, options: GenerateOptions):
+        options.system_instructions = self.update_system_instructions
+        options.tools = [self.select, self.update, self.get_tables, self.get_table_schema]
+        return self.generate_response(prompt, options)
+
+    @observe
     def generate_response(self, prompt: str, options: GenerateOptions):
         logging.info("PROMPT: \n" + prompt)
         try:
@@ -111,8 +130,8 @@ class GeminiAIService(AIService):
 
     def getConfig(self, options: GenerateOptions):
         return GenerateContentConfig(
-            system_instruction=self._system_instructions,
-            tools=self.getTools(),
+            system_instruction=options.system_instructions,
+            tools=options.tools,
             temperature=options.temperature,
             max_output_tokens=options.max_tokens
         )
